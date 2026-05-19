@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Dashboard API Monitor</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; padding: 20px; }
+        h1 { color: #38bdf8; }
+        .card { background: #1e293b; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
+        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
+        .UP { background: #22c55e; color: white; }
+        .DEGRADED { background: #f59e0b; color: white; }
+        .DOWN { background: #ef4444; color: white; }
+        .PASS { color: #22c55e; font-weight: bold; }
+        .FAIL { color: #ef4444; font-weight: bold; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th { background: #334155; padding: 10px; text-align: left; }
+        td { padding: 8px 10px; border-bottom: 1px solid #334155; }
+        .btn { background: #38bdf8; color: #0f172a; padding: 10px 20px; 
+               border-radius: 8px; text-decoration: none; font-weight: bold; }
+        .metrics { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px; }
+        .metric { background: #334155; padding: 15px 20px; border-radius: 8px; text-align: center; }
+        .metric-value { font-size: 28px; font-weight: bold; color: #38bdf8; }
+        .metric-label { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+    </style>
+</head>
+<body>
+
+    <h1>📊 API Monitor — Frankfurter</h1>
+
+    <div style="margin-bottom: 20px;">
+        <a href="/run" class="btn">▶ Lancer un run</a>
+        &nbsp;
+        <a href="/export" class="btn" style="background:#6366f1;">⬇ Exporter JSON</a>
+        &nbsp;
+        <a href="/health" class="btn" style="background:#22c55e;">❤️ Health</a>
+    </div>
+
+    {% if runs %}
+        {% set dernier = runs[0] %}
+
+        <div class="card">
+            <h2>Dernier run — {{ dernier.timestamp }}</h2>
+            <span class="badge {{ dernier.summary.disponibilite }}">
+                {{ dernier.summary.disponibilite }}
+            </span>
+
+            <div class="metrics">
+                <div class="metric">
+                    <div class="metric-value">{{ dernier.summary.passed }}/{{ dernier.summary.total }}</div>
+                    <div class="metric-label">Tests passés</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">{{ dernier.summary.error_rate * 100 | round(1) }}%</div>
+                    <div class="metric-label">Taux d'erreur</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">{{ dernier.summary.latency_ms_avg }} ms</div>
+                    <div class="metric-label">Latence moyenne</div>
+                </div>
+                <div class="metric">
+                    <div class="metric-value">{{ dernier.summary.latency_ms_p95 }} ms</div>
+                    <div class="metric-label">Latence p95</div>
+                </div>
+            </div>
+
+            <h3>Détail des tests</h3>
+            <table>
+                <tr>
+                    <th>Test</th>
+                    <th>Statut</th>
+                    <th>Latence</th>
+                    <th>Détails</th>
+                </tr>
+                {% for test in dernier.tests %}
+                <tr>
+                    <td>{{ test.name }}</td>
+                    <td class="{{ test.status }}">{{ test.status }}</td>
+                    <td>{{ test.latency_ms }} ms</td>
+                    <td>{{ test.details }}</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>📜 Historique des runs</h2>
+            <table>
+                <tr>
+                    <th>#</th>
+                    <th>Timestamp</th>
+                    <th>Statut</th>
+                    <th>Passés</th>
+                    <th>Échoués</th>
+                    <th>Latence avg</th>
+                    <th>Taux erreur</th>
+                </tr>
+                {% for r in runs %}
+                <tr>
+                    <td>{{ r.id }}</td>
+                    <td>{{ r.timestamp }}</td>
+                    <td><span class="badge {{ r.summary.disponibilite }}">{{ r.summary.disponibilite }}</span></td>
+                    <td class="PASS">{{ r.summary.passed }}</td>
+                    <td class="FAIL">{{ r.summary.failed }}</td>
+                    <td>{{ r.summary.latency_ms_avg }} ms</td>
+                    <td>{{ r.summary.error_rate * 100 | round(1) }}%</td>
+                </tr>
+                {% endfor %}
+            </table>
+        </div>
+
+    {% else %}
+        <div class="card">
+            <p>Aucun run effectué pour l'instant. Clique sur <strong>"Lancer un run"</strong> pour commencer !</p>
+        </div>
+    {% endif %}
+
+</body>
+</html>
