@@ -2,118 +2,428 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <title>Dashboard API Monitor</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Monitor — Frankfurter</title>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=EB+Garamond:ital,wght@0,400;0,500;1,400&display=swap" rel="stylesheet">
     <style>
-        body { font-family: Arial, sans-serif; background: #0f172a; color: #e2e8f0; padding: 20px; }
-        h1 { color: #38bdf8; }
-        .card { background: #1e293b; border-radius: 10px; padding: 20px; margin-bottom: 20px; }
-        .badge { padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: bold; }
-        .UP { background: #22c55e; color: white; }
-        .DEGRADED { background: #f59e0b; color: white; }
-        .DOWN { background: #ef4444; color: white; }
-        .PASS { color: #22c55e; font-weight: bold; }
-        .FAIL { color: #ef4444; font-weight: bold; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th { background: #334155; padding: 10px; text-align: left; }
-        td { padding: 8px 10px; border-bottom: 1px solid #334155; }
-        .btn { background: #38bdf8; color: #0f172a; padding: 10px 20px; 
-               border-radius: 8px; text-decoration: none; font-weight: bold; }
-        .metrics { display: flex; gap: 20px; flex-wrap: wrap; margin-top: 10px; }
-        .metric { background: #334155; padding: 15px 20px; border-radius: 8px; text-align: center; }
-        .metric-value { font-size: 28px; font-weight: bold; color: #38bdf8; }
-        .metric-label { font-size: 12px; color: #94a3b8; margin-top: 4px; }
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --bg: #0a0a0a;
+            --surface: #111111;
+            --surface2: #181818;
+            --border: rgba(255,255,255,0.07);
+            --border2: rgba(255,255,255,0.13);
+            --text: #f0ece4;
+            --muted: #8a8580;
+            --accent: #6b9fd4;
+            --accent2: #a8c8e8;
+            --up: #4a7c59;
+            --up-text: #a8d5b5;
+            --degraded: #7c6230;
+            --degraded-text: #e8c97a;
+            --down: #7c3030;
+            --down-text: #e87a7a;
+            --pass: #a8d5b5;
+            --fail: #e87a7a;
+            --serif: 'Playfair Display', Georgia, serif;
+            --body: 'EB Garamond', Georgia, serif;
+        }
+
+        body {
+            background: var(--bg);
+            color: var(--text);
+            font-family: var(--body);
+            font-size: 17px;
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+
+        /* Header */
+        header {
+            border-bottom: 1px solid var(--border);
+            padding: 2rem 3rem;
+            display: flex;
+            align-items: flex-end;
+            justify-content: space-between;
+        }
+
+        .brand {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .brand-label {
+            font-size: 11px;
+            letter-spacing: 0.2em;
+            text-transform: uppercase;
+            color: var(--accent);
+            font-family: var(--body);
+        }
+
+        .brand-title {
+            font-family: var(--serif);
+            font-size: 28px;
+            font-weight: 500;
+            color: var(--text);
+            letter-spacing: -0.01em;
+        }
+
+        .header-actions {
+            display: flex;
+            gap: 12px;
+            align-items: center;
+        }
+
+        .btn {
+            font-family: var(--body);
+            font-size: 14px;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            padding: 9px 22px;
+            border: 1px solid var(--border2);
+            background: transparent;
+            color: var(--muted);
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn:hover { border-color: var(--accent); color: var(--accent); }
+
+        .btn-primary {
+            background: var(--accent);
+            color: #0a0a0a;
+            border-color: var(--accent);
+            font-weight: 500;
+        }
+
+        .btn-primary:hover { background: var(--accent2); border-color: var(--accent2); color: #0a0a0a; }
+
+        /* Main layout */
+        main { padding: 3rem; max-width: 1400px; }
+
+        /* Section titles */
+        .section-header {
+            display: flex;
+            align-items: baseline;
+            gap: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section-title {
+            font-family: var(--serif);
+            font-size: 20px;
+            font-weight: 400;
+            color: var(--text);
+        }
+
+        .section-line {
+            flex: 1;
+            height: 1px;
+            background: var(--border);
+        }
+
+        /* Status badge */
+        .badge {
+            display: inline-block;
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            padding: 4px 12px;
+            font-family: var(--body);
+        }
+
+        .badge.UP { background: var(--up); color: var(--up-text); }
+        .badge.DEGRADED { background: var(--degraded); color: var(--degraded-text); }
+        .badge.DOWN { background: var(--down); color: var(--down-text); }
+        .badge.UNKNOWN { background: #333; color: #999; }
+
+        /* Metric cards */
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 1px;
+            background: var(--border);
+            border: 1px solid var(--border);
+            margin-bottom: 3rem;
+        }
+
+        .metric-card {
+            background: var(--surface);
+            padding: 2rem 1.75rem;
+        }
+
+        .metric-label {
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--muted);
+            margin-bottom: 0.75rem;
+            font-family: var(--body);
+        }
+
+        .metric-value {
+            font-family: var(--serif);
+            font-size: 36px;
+            font-weight: 400;
+            color: var(--text);
+            line-height: 1;
+        }
+
+        .metric-sub {
+            font-size: 13px;
+            color: var(--muted);
+            margin-top: 6px;
+            font-style: italic;
+        }
+
+        /* Last run block */
+        .run-header {
+            display: flex;
+            align-items: center;
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .run-timestamp {
+            font-size: 14px;
+            color: var(--muted);
+            font-style: italic;
+        }
+
+        /* Tests table */
+        .tests-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 3rem;
+        }
+
+        .tests-table thead tr {
+            border-bottom: 1px solid var(--border2);
+        }
+
+        .tests-table th {
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 400;
+            font-family: var(--body);
+            padding: 0 1rem 1rem 0;
+            text-align: left;
+        }
+
+        .tests-table td {
+            padding: 1rem 1rem 1rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 16px;
+            vertical-align: middle;
+        }
+
+        .tests-table tbody tr:hover td { background: var(--surface); }
+
+        .status-pass { color: var(--pass); font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; }
+        .status-fail { color: var(--fail); font-size: 13px; letter-spacing: 0.1em; text-transform: uppercase; }
+
+        .latency-bar-wrap { display: flex; align-items: center; gap: 10px; }
+        .latency-bar { height: 2px; background: var(--border2); flex: 1; max-width: 80px; }
+        .latency-bar-fill { height: 2px; background: var(--accent); }
+
+        /* History table */
+        .history-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .history-table th {
+            font-size: 11px;
+            letter-spacing: 0.15em;
+            text-transform: uppercase;
+            color: var(--muted);
+            font-weight: 400;
+            font-family: var(--body);
+            padding: 0 1.5rem 1rem 0;
+            text-align: left;
+            border-bottom: 1px solid var(--border2);
+        }
+
+        .history-table td {
+            padding: 0.9rem 1.5rem 0.9rem 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 15px;
+            color: var(--muted);
+        }
+
+        .history-table td:first-child { color: var(--text); font-family: var(--serif); }
+        .history-table tbody tr:hover td { color: var(--text); }
+
+        /* Empty state */
+        .empty {
+            padding: 5rem 0;
+            text-align: center;
+            color: var(--muted);
+            font-style: italic;
+            font-size: 18px;
+        }
+
+        .empty a { color: var(--accent); text-decoration: none; }
+        .empty a:hover { text-decoration: underline; }
+
+        /* Divider */
+        .divider { height: 1px; background: var(--border); margin: 3rem 0; }
+
+        /* Footer */
+        footer {
+            border-top: 1px solid var(--border);
+            padding: 1.5rem 3rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 4rem;
+        }
+
+        footer span { font-size: 13px; color: var(--muted); font-style: italic; }
     </style>
 </head>
 <body>
 
-    <h1>📊 API Monitor — Frankfurter</h1>
+<header>
+    <div class="brand">
+        <span class="brand-label">Quality of Service Monitor</span>
+        <span class="brand-title">Frankfurter Exchange API</span>
+    </div>
+    <div class="header-actions">
+        <a href="/export" class="btn">Exporter JSON</a>
+        <a href="/health" class="btn">Health</a>
+        <a href="/run" class="btn btn-primary">Lancer un run</a>
+    </div>
+</header>
 
-    <div style="margin-bottom: 20px;">
-        <a href="/run" class="btn">▶ Lancer un run</a>
-        &nbsp;
-        <a href="/export" class="btn" style="background:#6366f1;">⬇ Exporter JSON</a>
-        &nbsp;
-        <a href="/health" class="btn" style="background:#22c55e;">❤️ Health</a>
+<main>
+
+{% if runs %}
+    {% set d = runs[0] %}
+
+    <!-- Dernier run -->
+    <div class="section-header">
+        <h2 class="section-title">Dernier run</h2>
+        <div class="section-line"></div>
     </div>
 
-    {% if runs %}
-        {% set dernier = runs[0] %}
+    <div class="run-header">
+        <span class="badge {{ d.summary.disponibilite }}">{{ d.summary.disponibilite }}</span>
+        <span class="run-timestamp">{{ d.timestamp }}</span>
+    </div>
 
-        <div class="card">
-            <h2>Dernier run — {{ dernier.timestamp }}</h2>
-            <span class="badge {{ dernier.summary.disponibilite }}">
-                {{ dernier.summary.disponibilite }}
-            </span>
-
-            <div class="metrics">
-                <div class="metric">
-                    <div class="metric-value">{{ dernier.summary.passed }}/{{ dernier.summary.total }}</div>
-                    <div class="metric-label">Tests passés</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">{{ dernier.summary.error_rate * 100 | round(1) }}%</div>
-                    <div class="metric-label">Taux d'erreur</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">{{ dernier.summary.latency_ms_avg }} ms</div>
-                    <div class="metric-label">Latence moyenne</div>
-                </div>
-                <div class="metric">
-                    <div class="metric-value">{{ dernier.summary.latency_ms_p95 }} ms</div>
-                    <div class="metric-label">Latence p95</div>
-                </div>
-            </div>
-
-            <h3>Détail des tests</h3>
-            <table>
-                <tr>
-                    <th>Test</th>
-                    <th>Statut</th>
-                    <th>Latence</th>
-                    <th>Détails</th>
-                </tr>
-                {% for test in dernier.tests %}
-                <tr>
-                    <td>{{ test.name }}</td>
-                    <td class="{{ test.status }}">{{ test.status }}</td>
-                    <td>{{ test.latency_ms }} ms</td>
-                    <td>{{ test.details }}</td>
-                </tr>
-                {% endfor %}
-            </table>
+    <!-- Métriques -->
+    <div class="metrics-grid">
+        <div class="metric-card">
+            <div class="metric-label">Tests passés</div>
+            <div class="metric-value">{{ d.summary.passed }}<span style="font-size:20px;color:var(--muted)">/{{ d.summary.total }}</span></div>
+            <div class="metric-sub">assertions validées</div>
         </div>
-
-        <div class="card">
-            <h2>📜 Historique des runs</h2>
-            <table>
-                <tr>
-                    <th>#</th>
-                    <th>Timestamp</th>
-                    <th>Statut</th>
-                    <th>Passés</th>
-                    <th>Échoués</th>
-                    <th>Latence avg</th>
-                    <th>Taux erreur</th>
-                </tr>
-                {% for r in runs %}
-                <tr>
-                    <td>{{ r.id }}</td>
-                    <td>{{ r.timestamp }}</td>
-                    <td><span class="badge {{ r.summary.disponibilite }}">{{ r.summary.disponibilite }}</span></td>
-                    <td class="PASS">{{ r.summary.passed }}</td>
-                    <td class="FAIL">{{ r.summary.failed }}</td>
-                    <td>{{ r.summary.latency_ms_avg }} ms</td>
-                    <td>{{ r.summary.error_rate * 100 | round(1) }}%</td>
-                </tr>
-                {% endfor %}
-            </table>
+        <div class="metric-card">
+            <div class="metric-label">Taux d'erreur</div>
+            <div class="metric-value">{{ (d.summary.error_rate * 100) | round(1) }}<span style="font-size:20px;color:var(--muted)">%</span></div>
+            <div class="metric-sub">sur ce run</div>
         </div>
-
-    {% else %}
-        <div class="card">
-            <p>Aucun run effectué pour l'instant. Clique sur <strong>"Lancer un run"</strong> pour commencer !</p>
+        <div class="metric-card">
+            <div class="metric-label">Latence moyenne</div>
+            <div class="metric-value">{{ d.summary.latency_ms_avg }}<span style="font-size:20px;color:var(--muted)">ms</span></div>
+            <div class="metric-sub">moyenne arithmétique</div>
         </div>
-    {% endif %}
+        <div class="metric-card">
+            <div class="metric-label">Latence p95</div>
+            <div class="metric-value">{{ d.summary.latency_ms_p95 }}<span style="font-size:20px;color:var(--muted)">ms</span></div>
+            <div class="metric-sub">95e percentile</div>
+        </div>
+    </div>
+
+    <!-- Détail tests -->
+    <div class="section-header">
+        <h2 class="section-title">Détail des tests</h2>
+        <div class="section-line"></div>
+    </div>
+
+    <table class="tests-table">
+        <thead>
+            <tr>
+                <th style="width:40%">Assertion</th>
+                <th style="width:12%">Statut</th>
+                <th style="width:22%">Latence</th>
+                <th>Détails</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for t in d.tests %}
+            <tr>
+                <td>{{ t.name }}</td>
+                <td class="status-{{ t.status | lower }}">{{ t.status }}</td>
+                <td>
+                    {% if t.latency_ms %}
+                    <div class="latency-bar-wrap">
+                        <span>{{ t.latency_ms }} ms</span>
+                        <div class="latency-bar">
+                            <div class="latency-bar-fill" style="width: {{ [t.latency_ms / 10, 100] | min }}%"></div>
+                        </div>
+                    </div>
+                    {% else %}—{% endif %}
+                </td>
+                <td style="color:var(--muted);font-style:italic;font-size:15px">{{ t.details or '—' }}</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+    <div class="divider"></div>
+
+    <!-- Historique -->
+    <div class="section-header">
+        <h2 class="section-title">Historique des runs</h2>
+        <div class="section-line"></div>
+    </div>
+
+    <table class="history-table">
+        <thead>
+            <tr>
+                <th>#</th>
+                <th>Horodatage</th>
+                <th>Statut</th>
+                <th>Passés</th>
+                <th>Échoués</th>
+                <th>Latence moy.</th>
+                <th>Taux erreur</th>
+            </tr>
+        </thead>
+        <tbody>
+            {% for r in runs %}
+            <tr>
+                <td>{{ r.id }}</td>
+                <td>{{ r.timestamp }}</td>
+                <td><span class="badge {{ r.summary.disponibilite }}">{{ r.summary.disponibilite }}</span></td>
+                <td style="color:var(--pass)">{{ r.summary.passed }}</td>
+                <td style="color:{% if r.summary.failed > 0 %}var(--fail){% else %}var(--muted){% endif %}">{{ r.summary.failed }}</td>
+                <td>{{ r.summary.latency_ms_avg }} ms</td>
+                <td>{{ (r.summary.error_rate * 100) | round(1) }}%</td>
+            </tr>
+            {% endfor %}
+        </tbody>
+    </table>
+
+{% else %}
+    <div class="empty">
+        Aucun run enregistré. <a href="/run">Lancer le premier run.</a>
+    </div>
+{% endif %}
+
+</main>
+
+<footer>
+    <span>Frankfurter Exchange API — Testing as Code</span>
+    <span>AshleyEO &mdash; PythonAnywhere</span>
+</footer>
 
 </body>
 </html>
